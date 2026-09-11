@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Parsing\Yandex;
 
 use App\Services\Parsing\Exceptions\LayoutChangedException;
+use App\Services\Parsing\Exceptions\OrganizationNotFoundException;
 use App\Services\Parsing\Yandex\YandexStateExtractor;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -142,6 +143,25 @@ final class YandexStateExtractorTest extends TestCase
         });
 
         $this->assertLayoutCode(LayoutChangedException::RESULTS_PATH_MISSING, $html);
+    }
+
+    #[Test]
+    public function an_id_that_does_not_exist_is_reported_as_a_missing_card(): void
+    {
+        // Confirmed against the live source: a made-up organisation id returns
+        // HTTP 200 with an empty result set, not a 404. Reporting that as a
+        // layout change would send a developer chasing a bug that is really a
+        // user typo.
+        $html = $this->withState('org_page1.html', function (array $state): array {
+            $state['stack'][0]['results']['items'] = [];
+            $state['stack'][0]['results']['totalResultCount'] = 0;
+
+            return $state;
+        });
+
+        $this->expectException(OrganizationNotFoundException::class);
+
+        $this->extractor->extract($html, 1);
     }
 
     #[Test]

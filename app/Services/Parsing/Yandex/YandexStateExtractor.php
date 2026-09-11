@@ -9,6 +9,7 @@ use App\Services\Parsing\Data\ExtractedPage;
 use App\Services\Parsing\Data\ReviewData;
 use App\Services\Parsing\Data\ReviewPageData;
 use App\Services\Parsing\Exceptions\LayoutChangedException;
+use App\Services\Parsing\Exceptions\OrganizationNotFoundException;
 use DateTimeImmutable;
 use DateTimeZone;
 use JsonException;
@@ -121,13 +122,26 @@ final class YandexStateExtractor
      */
     private function businessItem(array $state): array
     {
-        $item = data_get($state, 'stack.0.results.items.0');
+        $results = data_get($state, 'stack.0.results');
 
-        if (! is_array($item)) {
+        if (! is_array($results)) {
             throw LayoutChangedException::make(
                 LayoutChangedException::RESULTS_PATH_MISSING,
-                'В состоянии страницы нет карточки по пути stack[0].results.items[0].',
+                'В состоянии страницы нет результатов по пути stack[0].results.',
                 ['top_level_keys' => array_slice(array_keys($state), 0, 15)],
+            );
+        }
+
+        $item = $results['items'][0] ?? null;
+
+        if (! is_array($item)) {
+            // For an id that does not exist — or a card that was taken down —
+            // Yandex answers 200 with an empty result set rather than a 404.
+            // That is a missing organisation, not a changed layout, and the two
+            // need very different reactions from the user.
+            throw OrganizationNotFoundException::make(
+                'Карточка организации не найдена: Яндекс вернул пустой результат по этому идентификатору.',
+                ['total_result_count' => $results['totalResultCount'] ?? null],
             );
         }
 
