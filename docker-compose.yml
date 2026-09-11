@@ -1,0 +1,93 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    image: yandex-reviews-app
+    restart: unless-stopped
+    environment:
+      APP_ROLE: web
+    env_file: .env
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - storage:/var/www/html/storage
+      - public:/var/www/html/public
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8000}:80"
+    volumes:
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      # The document root is produced by the app image and shared read-only.
+      - public:/var/www/html/public:ro
+    depends_on:
+      - app
+
+  # Parsing runs here, never inside a web request: one card is twelve
+  # sequential requests to Yandex and about twenty seconds.
+  queue:
+    image: yandex-reviews-app
+    restart: unless-stopped
+    command: php artisan queue:work --queue=default --tries=3 --timeout=600 --sleep=1 --max-jobs=200
+    environment:
+      APP_ROLE: worker
+    env_file: .env
+    depends_on:
+      app:
+        condition: service_started
+      mysql:
+        condition: service_healthy
+    volumes:
+      - storage:/var/www/html/storage
+
+  scheduler:
+    image: yandex-reviews-app
+    restart: unless-stopped
+    command: php artisan schedule:work
+    environment:
+      APP_ROLE: worker
+    env_file: .env
+    depends_on:
+      app:
+        condition: service_started
+      mysql:
+        condition: service_healthy
+    volumes:
+      - storage:/var/www/html/storage
+
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: "${DB_DATABASE:-reviews}"
+      MYSQL_USER: "${DB_USERNAME:-reviews}"
+      MYSQL_PASSWORD: "${DB_PASSWORD:-secret}"
+      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD:-root-secret}"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${DB_ROOT_PASSWORD:-root-secret}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - mysql:/var/lib/mysql
+    ports:
+      - "${DB_FORWARD_PORT:-13306}:3306"
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis:/data
+
+volumes:
+  mysql:
+  redis:
+  storage:
+  public:
