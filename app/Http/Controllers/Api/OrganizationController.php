@@ -39,7 +39,9 @@ final class OrganizationController extends Controller
     {
         $organization = $this->connector->connect($request->user(), $request->url());
 
-        return OrganizationResource::make($organization->load('latestParseRun'))
+        // fresh(): с синхронной очередью парсинг уже отработал внутри запроса,
+        // и объект в памяти отдал бы клиенту устаревший статус "в очереди".
+        return OrganizationResource::make($organization->fresh()->load('latestParseRun'))
             ->response()
             ->setStatusCode($organization->wasRecentlyCreated ? 201 : 200);
     }

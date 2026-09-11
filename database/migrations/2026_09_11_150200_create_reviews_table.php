@@ -27,9 +27,12 @@ return new class extends Migration
             // The organisation's own reply — the product this test task models
             // is about answering reviews, so it would be odd to drop it.
             $table->text('business_comment_text')->nullable();
-            $table->timestamp('business_comment_at')->nullable();
+            $table->dateTime('business_comment_at')->nullable();
 
-            $table->timestamp('published_at');
+            // dateTime, а не timestamp: MySQL 5.7 отвергает TIMESTAMP NOT NULL
+            // без DEFAULT, а отзывы старше 2038 года нам всё равно не грозят —
+            // зато миграция одинаково проходит на 5.7, 8.x, SQLite и Postgres.
+            $table->dateTime('published_at');
 
             // Fingerprint of the meaningful fields: lets a re-parse tell
             // "unchanged" from "edited" with one comparison.
@@ -38,8 +41,8 @@ return new class extends Migration
             $table->unsignedSmallInteger('photos_count')->default(0);
             $table->unsignedInteger('likes_count')->default(0);
 
-            $table->timestamp('first_seen_at');
-            $table->timestamp('last_seen_at');
+            $table->dateTime('first_seen_at');
+            $table->dateTime('last_seen_at');
             $table->timestamps();
 
             $table->unique(['organization_id', 'external_id']);

@@ -31,7 +31,7 @@ return new class extends Migration
             $table->unsignedInteger('reviews_stored')->default(0);
 
             $table->string('parse_status', 16)->nullable();
-            $table->timestamp('last_parsed_at')->nullable();
+            $table->dateTime('last_parsed_at')->nullable();
             $table->timestamps();
 
             // One card per user: re-submitting the same link updates it.

@@ -35,8 +35,8 @@ return new class extends Migration
             $table->json('warnings')->nullable();
 
             $table->unsignedTinyInteger('attempt')->default(1);
-            $table->timestamp('started_at')->nullable();
-            $table->timestamp('finished_at')->nullable();
+            $table->dateTime('started_at')->nullable();
+            $table->dateTime('finished_at')->nullable();
             $table->unsignedInteger('duration_ms')->nullable();
             $table->timestamps();
 

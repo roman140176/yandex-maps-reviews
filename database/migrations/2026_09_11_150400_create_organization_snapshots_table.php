@@ -20,7 +20,7 @@ return new class extends Migration
             $table->unsignedInteger('reviews_count')->nullable();
             $table->unsignedInteger('reviews_stored')->default(0);
 
-            $table->timestamp('captured_at');
+            $table->dateTime('captured_at');
 
             $table->index(['organization_id', 'captured_at']);
         });

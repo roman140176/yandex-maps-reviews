@@ -18,7 +18,7 @@ return new class extends Migration
             // reviews rarely change, and when they do it is usually one field.
             $table->json('changes');
 
-            $table->timestamp('created_at');
+            $table->dateTime('created_at');
 
             $table->index(['review_id', 'created_at']);
         });
