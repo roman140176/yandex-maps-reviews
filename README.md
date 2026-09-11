@@ -132,7 +132,7 @@ SSR-состоянии) плюс сессионные cookies; на подобр
 |---|---|
 | `state_script_missing` | в HTML нет `<script class="state-view">` |
 | `state_json_invalid` | тег есть, содержимое не разбирается как JSON |
-| `results_path_missing` | нет `stack[0].results.items[0]` |
+| `results_path_missing` | нет `stack[0].results` |
 | `business_not_found` | карточка есть, но это не организация |
 | `rating_data_missing` | нет блока `ratingData` |
 | `rating_data_invalid` | рейтинг вне 0..5 или счётчики отрицательные |
@@ -140,7 +140,7 @@ SSR-состоянии) плюс сессионные cookies; на подобр
 | `review_shape_mismatch` | больше 20 % отзывов страницы без обязательных полей |
 | `pagination_missing` | пропали параметры постраничной навигации |
 | `source_captcha` / `source_forbidden` / `source_rate_limited` | сработала антибот-защита |
-| `organization_not_found` | карточка удалена (404) |
+| `organization_not_found` | карточка удалена (404) либо ответ пуст при живой странице |
 
 Плюс три вещи, которые ловят «данные пришли, но не те»:
 
